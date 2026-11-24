@@ -41,18 +41,22 @@ def resolve_output_path():
 def main():
     text = MESSAGE.strip()
     if not text:
-        print("error: message is empty", file=sys.stderr)
-        return 1
+        raise SystemExit("error: message is empty")
     if len(text) > 200:
-        print("error: message exceeds 200 characters", file=sys.stderr)
-        return 1
+        raise SystemExit("error: message exceeds 200 characters")
+    if "\n" in text or "\r" in text:
+        raise SystemExit("error: message must be a single line")
     path = resolve_output_path()
     parent = os.path.dirname(path)
     if parent:
         os.makedirs(parent, exist_ok=True)
+    data = (text + "\n").encode("utf-8")
     with open(path, "w", encoding="utf-8") as handle:
         handle.write(text + "\n")
     os.chmod(path, 0o644)
+    with open(path, "rb") as handle:
+        if handle.read() != data:
+            raise SystemExit("error: read-back mismatch for %s" % path)
     return 0
 
 
